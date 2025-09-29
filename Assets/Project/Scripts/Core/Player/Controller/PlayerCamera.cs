@@ -1,10 +1,11 @@
+using Fusion;
 using UnityEngine;
 
 [RequireComponent(typeof(Camera))]
-public class PlayerCamera : MonoBehaviour
+public class PlayerCamera : NetworkBehaviour
 {
     [Header("References")]
-    [SerializeField] Transform playerBody;
+    [SerializeField] private Transform playerBody;
 
     [Header("Settings")]
     [SerializeField] private float mouseSensitivity = 100f; // Чувствительность мыши
@@ -12,21 +13,60 @@ public class PlayerCamera : MonoBehaviour
 
     private float xRotation = 0f;
 
-    void Start()
+    public override void Spawned()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        //if (HasInputAuthority)
+        //{
+          //  Cursor.lockState = CursorLockMode.Locked;
+           // Cursor.visible = false;
+        //}
+        //else
+        //{
+          //  GetComponent<Camera>().enabled = false;
+            //if (TryGetComponent<AudioListener>(out var listener)) listener.enabled = false;
+        //}
     }
 
-    void Update()
+    public override void FixedUpdateNetwork()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        //if (!HasInputAuthority)
+            //return;
 
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
+        //if (GetInput(out NetworkInputData data))
+        //{
+            float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+            float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
-        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+            // Поворот камерой вверх/вниз
+            xRotation -= mouseY;
+            xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
+            transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
 
-        playerBody.Rotate(Vector3.up * mouseX);
+            // Поворот тела игрока (влево/вправо)
+            playerBody.Rotate(Vector3.up * mouseX);
+        //}
     }
+
+    public struct NetworkInputData : INetworkInput
+    {
+        // Вынести в отдельный скрипт
+        public Vector2 moveInput;
+        public Vector2 lookInput;
+        public NetworkButtons buttons;
+    }
+    
+    public void OnInput(NetworkRunner runner, NetworkInput input)
+    {
+        // Возможно отедльный скрипт
+        NetworkInputData data = new NetworkInputData();
+
+        data.moveInput = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        data.lookInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+
+        if (Input.GetButton("Jump"))
+            data.buttons.Set(0, true);
+
+        input.Set(data);
+    }
+
 }

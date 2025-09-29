@@ -1,3 +1,4 @@
+
 using Fusion;
 using UnityEngine;
 
@@ -33,14 +34,14 @@ public class PlayerMovement : NetworkBehaviour
         // Движение относительно камеры
         Vector3 move = cameraTransform.right * horizontal + cameraTransform.forward * vertical;
         move.y = 0f;
-        controller.Move(move.normalized * moveSpeed * Time.deltaTime);
+        controller.Move(moveSpeed * Runner.DeltaTime * move.normalized);
 
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
+        velocity.y += gravity * Runner.DeltaTime;
+        controller.Move(velocity * Runner.DeltaTime);
     }
 }
